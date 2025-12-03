@@ -21,7 +21,8 @@ local function add_keymaps()
   local buf = window.buf
   local opts = { buffer = buf, noremap = true, silent = true, nowait = true }
   vim.keymap.set('n', 'q', function() M.quit() end, opts)
-  window.set_footer(' [q]uit ')
+  vim.keymap.set('n', 'r', function() M.restart() end, opts)
+  window.set_footer(' [r]estart [q]uit ')
 end
 
 local function init()
@@ -53,14 +54,17 @@ local function new_snowflake()
   }
 end
 
-local function add_snowflake()
+local function update_max_snowflakes()
   local min_gh = 0
   for _, v in pairs(ground_snowflakes) do
     if v < min_gh or min_gh == 0 then min_gh = v end
   end
-  max_snowflakes2 = math.floor(max_snowflakes * (game.field.height - 1 - min_gh) / (game.field.height - 1))
-  -- print(min_gh, max_snowflakes2, #snowflakes, max_snowflakes)
+  local max_height = math.floor(game.field.height / 2)
+  max_snowflakes2 = math.floor(max_snowflakes * (max_height - min_gh) / max_height)
+  if max_snowflakes2 < 1 then M.restart() end
+end
 
+local function add_snowflake()
   counter = counter + 1.0 / 15.0
   if counter >= 1 then
     if #snowflakes < max_snowflakes2 then table.insert(snowflakes, new_snowflake()) end
@@ -129,22 +133,43 @@ local function handle_snow()
   end
 end
 
+local waiting_runs = 0
+
 local function run()
   if not game.is_running then return end
 
+  update_max_snowflakes()
   add_snowflake()
   handle_snow()
   window.set_title(' Demo: Snow [' .. #snowflakes .. ']')
 
-  vim.defer_fn(function() run() end, 1000 / 30)
+  waiting_runs = waiting_runs + 1
+  vim.defer_fn(function()
+    run()
+    waiting_runs = waiting_runs - 1
+  end, 1000 / 30)
+end
+
+function M.restart()
+  gfx.clear()
+  init_snow()
+end
+
+function M.restart2()
+  game.is_running = false
+  while waiting_runs > 0 do
+    vim.wait(100)
+  end
+  gfx.clear()
+  init_snow()
+  game.is_running = true
+  run()
 end
 
 function M.start()
   if not window.open() then return end
   init()
-
   init_snow()
-
   game.is_running = true
   run()
 end
