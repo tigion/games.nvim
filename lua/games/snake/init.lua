@@ -91,7 +91,6 @@ end
 ---@return { x: integer, y: integer }?
 local function random_free_position()
   local free_positions = game.matrix:get_positions_of(0, game.gfx_canvas_type == 'halfblock')
-  print('Free positions: ' .. #free_positions .. '(' .. vim.fn.strftime('%H:%M:%S') .. ')')
   if #free_positions == 0 then return nil end
   return free_positions[math.random(1, #free_positions)]
 end
