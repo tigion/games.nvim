@@ -62,7 +62,9 @@ end
 function M.canvas.load(name)
   local lines = canvas.cache[name]
   if lines == nil then return end
+  vim.bo[window.buf].modifiable = true
   vim.api.nvim_buf_set_lines(window.buf, 0, -1, false, lines)
+  vim.bo[window.buf].modifiable = false
 end
 
 function M.canvas.remove(name) canvas.cache[name] = nil end
@@ -140,7 +142,9 @@ function core.set_text(row, col, text)
   local end_byte_offset = vim.str_byteindex(line, 'utf-32', col + text_length)
 
   -- Sets the text in the buffer at the specified position.
+  vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_text(buf, row, start_byte_offset, row, end_byte_offset, { text })
+  vim.bo[buf].modifiable = false
 end
 
 -- ----------------------------------------------------------------------------
@@ -284,7 +288,9 @@ function M.clear()
   for _ = 1, canvas.real_size.height do
     table.insert(lines, line)
   end
+  vim.bo[window.buf].modifiable = true
   vim.api.nvim_buf_set_lines(window.buf, 0, -1, false, lines)
+  vim.bo[window.buf].modifiable = false
 end
 
 function M.draw_point(x, y)

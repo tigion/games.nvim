@@ -50,8 +50,9 @@ function M.open()
   end
 
   -- Sets the buffer options.
-  -- vim.bo[buf].modifiable = false
+  vim.bo[M.buf].buftype = 'nofile'
   vim.bo[M.buf].bufhidden = 'wipe'
+  vim.bo[M.buf].modifiable = false
   vim.bo[M.buf].filetype = 'game_canvas'
   vim.bo[M.buf].swapfile = false
   vim.bo[M.buf].undofile = false
@@ -75,9 +76,6 @@ function M.open()
     row = row,
     col = col,
     border = border,
-    -- fixbuf = true,
-    -- fixwidth = true,
-    -- fixheight = true,
   }
 
   -- Opens the floating window with the given options.
