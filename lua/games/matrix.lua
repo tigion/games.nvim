@@ -1,5 +1,8 @@
 ---A simple matrix class for managing a 2D grid of integers.
-
+---
+---- y is the row index (1-based)
+---- x is the column index (1-based)
+---- `values[y][x]` holds the integer value at position (y, x)
 ---@class games.Matrix
 ---@field width integer
 ---@field height integer
@@ -8,22 +11,22 @@ local Matrix = {}
 Matrix.__index = Matrix
 
 ---Shifts 0-based positions to 1-based.
----@param x integer
 ---@param y integer
+---@param x integer
 ---@return integer, integer
-local function shift_0_to_1based(x, y) return x + 1, y + 1 end
+local function shift_0_to_1based(y, x) return y + 1, x + 1 end
 
 ---Shifts 1-based positions to 0-based.
----@param x integer
 ---@param y integer
+---@param x integer
 ---@return integer, integer
-local function shift_1_to_0based(x, y) return x - 1, y - 1 end
+local function shift_1_to_0based(y, x) return y - 1, x - 1 end
 
 ---Initializes the matrix with given width and height, filled with zeros.
----@param width integer
 ---@param height integer
+---@param width integer
 ---@return integer[][]
-local function init(width, height)
+local function init(height, width)
   local values = {}
   for y = 1, height do
     values[y] = {}
@@ -40,9 +43,9 @@ end
 ---@return games.Matrix
 function Matrix:new(height, width)
   local obj = {
-    width = width,
     height = height,
-    values = init(width, height),
+    width = width,
+    values = init(height, width),
   }
   setmetatable(obj, self)
   return obj
@@ -57,24 +60,24 @@ function Matrix:clear()
   end
 end
 
----Sets the value at the specified (x, y) position
+---Sets the value at the specified (y, x) position
 ---if the position is valid.
----@param x integer
 ---@param y integer
+---@param x integer
 ---@param value integer
-function Matrix:set(x, y, value)
-  x, y = shift_0_to_1based(x, y)
+function Matrix:set(y, x, value)
+  y, x = shift_0_to_1based(y, x)
   if self.values[y] == nil or self.values[y][x] == nil then return end
   self.values[y][x] = value
 end
 
----Gets the value at the specified (x, y) position
+---Gets the value at the specified (y, x) position
 ---or nil if the position is invalid.
----@param x integer
 ---@param y integer
+---@param x integer
 ---@return integer?
-function Matrix:get(x, y)
-  x, y = shift_0_to_1based(x, y)
+function Matrix:get(y, x)
+  y, x = shift_0_to_1based(y, x)
   if self.values[y] == nil or self.values[y][x] == nil then return nil end
   return self.values[y][x]
 end
