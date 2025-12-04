@@ -8,6 +8,9 @@ local game = {
   gfx_canvas_type = 'halfblock',
   is_running = false,
   field = { width = -1, height = -1 },
+  fps = 30,
+  frame_time = -1,
+  waiting_runs = 0,
 }
 
 local snowflakes = {}
@@ -33,6 +36,9 @@ local function init()
   local size = gfx.canvas.size()
   game.field.width = size.width
   game.field.height = size.height
+
+  -- Calculates the frame time (timeout) based on the fps.
+  game.frame_time = 1000.0 / game.fps
 end
 
 local function init_snow()
@@ -133,8 +139,6 @@ local function handle_snow()
   end
 end
 
-local waiting_runs = 0
-
 local function run()
   if not game.is_running then return end
 
@@ -143,11 +147,11 @@ local function run()
   handle_snow()
   window.set_title(' Demo: Snow [' .. #snowflakes .. ']')
 
-  waiting_runs = waiting_runs + 1
+  game.waiting_runs = game.waiting_runs + 1
   vim.defer_fn(function()
     run()
-    waiting_runs = waiting_runs - 1
-  end, 1000 / 30)
+    game.waiting_runs = game.waiting_runs - 1
+  end, game.frame_time)
 end
 
 function M.restart()
@@ -157,7 +161,7 @@ end
 
 function M.restart2()
   game.is_running = false
-  while waiting_runs > 0 do
+  while game.waiting_runs > 0 do
     vim.wait(100)
   end
   gfx.clear()

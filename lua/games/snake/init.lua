@@ -16,10 +16,8 @@ local game = {
   frame_time = -1,
   is_started = false,
   is_running = false,
+  waiting_runs = 0,
 }
-
--- Calculates the frame time (timeout) based on the fps.
-game.frame_time = 1000.0 / game.fps
 
 ---The speeds as fractions of the frame rate.
 -- 100.00%: 1.0/1.0  = 1.000, every  1 frame
@@ -262,7 +260,11 @@ local function init()
   game.field.width = size.width
   game.field.height = size.height
 
+  -- Creates the matrix of the game field.
   game.matrix = matrix:new(game.field.height, game.field.width)
+
+  -- Calculates the frame time (timeout) based on the fps.
+  game.frame_time = 1000.0 / game.fps
 end
 
 ---Prepares the game.
