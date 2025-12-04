@@ -2,7 +2,7 @@ local window = require('games.window')
 local gfx = require('games.gfx')
 local matrix = require('games.matrix')
 
----@class demo_life
+---@class games.demos.life
 local M = {}
 
 local game = {

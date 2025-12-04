@@ -1,7 +1,7 @@
 local window = require('games.window')
 local gfx = require('games.gfx')
 
----@class games.demo_snow
+---@class games.demos.snow
 local M = {}
 
 local game = {

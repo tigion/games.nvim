@@ -6,8 +6,8 @@ local M = {}
 local function select()
   local choices = {
     'Snake',
-    'Demo: Snow',
     'Demo: Life',
+    'Demo: Snow',
   }
 
   vim.ui.select(choices, {
@@ -15,10 +15,10 @@ local function select()
   }, function(name)
     if name == 'Snake' then
       require('games.snake').start()
-    elseif name == 'Demo: Snow' then
-      require('games.demo-snow').start()
     elseif name == 'Demo: Life' then
-      require('games.demo-life').start()
+      require('games.demos.life').start()
+    elseif name == 'Demo: Snow' then
+      require('games.demos.snow').start()
     end
   end)
 end
