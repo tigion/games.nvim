@@ -18,7 +18,7 @@ local function select()
     elseif name == 'Demo: Snow' then
       require('games.demo-snow').start()
     elseif name == 'Demo: Life' then
-      require('games.demo-live').start()
+      require('games.demo-life').start()
     end
   end)
 end
