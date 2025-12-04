@@ -41,9 +41,6 @@ local canvas = {
   cache = {},
 }
 
-local win = nil
-local buf = nil
-
 -- ----------------------------------------------------------------------------
 
 M.canvas = {}
@@ -84,11 +81,10 @@ function M.canvas.clear() canvas.cache = {} end
 local core = {}
 
 function core.get_char(row, col)
-  local buf = window.buf
-  local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ''
+  local line = vim.api.nvim_buf_get_lines(window.buf, row, row + 1, false)[1] or ''
   local start_byte_offset = vim.str_byteindex(line, 'utf-32', col)
   local end_byte_offset = vim.str_byteindex(line, 'utf-32', col + 1)
-  return vim.api.nvim_buf_get_text(buf, row, start_byte_offset, row, end_byte_offset, {})[1] or nil
+  return vim.api.nvim_buf_get_text(window.buf, row, start_byte_offset, row, end_byte_offset, {})[1] or nil
 end
 
 -- Sets the character at the given position in the buffer.
@@ -99,11 +95,10 @@ function core.set_char(row, col, char)
 end
 
 function core.get_double_char(col, row)
-  local buf = window.buf
-  local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ''
+  local line = vim.api.nvim_buf_get_lines(window.buf, row, row + 1, false)[1] or ''
   local start_byte_offset = vim.str_byteindex(line, 'utf-32', col)
   local end_byte_offset = vim.str_byteindex(line, 'utf-32', col + 2)
-  return vim.api.nvim_buf_get_text(buf, row, start_byte_offset, row, end_byte_offset, {})[1] or nil
+  return vim.api.nvim_buf_get_text(window.buf, row, start_byte_offset, row, end_byte_offset, {})[1] or nil
 end
 
 function core.set_double_char(row, col, char)
@@ -132,19 +127,17 @@ function core.set_text(row, col, text)
     text_length = vim.str_utfindex(text, 'utf-32')
   end
 
-  local buf = window.buf
-
   -- Gets the line at the specified row.
-  local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ''
+  local line = vim.api.nvim_buf_get_lines(window.buf, row, row + 1, false)[1] or ''
 
   -- Calculates the byte offsets based on character indices.
   local start_byte_offset = vim.str_byteindex(line, 'utf-32', col)
   local end_byte_offset = vim.str_byteindex(line, 'utf-32', col + text_length)
 
   -- Sets the text in the buffer at the specified position.
-  vim.bo[buf].modifiable = true
-  vim.api.nvim_buf_set_text(buf, row, start_byte_offset, row, end_byte_offset, { text })
-  vim.bo[buf].modifiable = false
+  vim.bo[window.buf].modifiable = true
+  vim.api.nvim_buf_set_text(window.buf, row, start_byte_offset, row, end_byte_offset, { text })
+  vim.bo[window.buf].modifiable = false
 end
 
 -- ----------------------------------------------------------------------------
@@ -275,7 +268,6 @@ function M.init(type)
   local win_size = window.size()
   canvas.size.width = math.floor(win_size.width * canvas.factor.width)
   canvas.size.height = math.floor(win_size.height * canvas.factor.height)
-
   canvas.real_size.width = math.floor(canvas.size.width / canvas.factor.width)
   canvas.real_size.height = math.floor(canvas.size.height / canvas.factor.height)
 
