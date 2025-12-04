@@ -65,8 +65,13 @@ end
 ---@param y integer
 ---@param x integer
 ---@param value integer
-function Matrix:set(y, x, value)
-  y, x = shift_0_to_1based(y, x)
+---@param opts? { is_0_based?: boolean }
+function Matrix:set(y, x, value, opts)
+  opts = opts or {}
+  if opts.is_0_based == nil then opts.is_0_based = false end
+  if opts.is_0_based then
+    y, x = shift_0_to_1based(y, x)
+  end
   if self.values[y] == nil or self.values[y][x] == nil then return end
   self.values[y][x] = value
 end
@@ -75,9 +80,14 @@ end
 ---or nil if the position is invalid.
 ---@param y integer
 ---@param x integer
+---@param opts? { is_0_based?: boolean }
 ---@return integer?
-function Matrix:get(y, x)
-  y, x = shift_0_to_1based(y, x)
+function Matrix:get(y, x, opts)
+  opts = opts or {}
+  if opts.is_0_based == nil then opts.is_0_based = false end
+  if opts.is_0_based then
+    y, x = shift_0_to_1based(y, x)
+  end
   if self.values[y] == nil or self.values[y][x] == nil then return nil end
   return self.values[y][x]
 end
@@ -85,10 +95,13 @@ end
 ---Finds all positions of the specified value in the matrix.
 ---Returns nil if no positions are found.
 ---@param value integer
----@param ignore_snake_halfblock boolean
+---@param opts? { return_0_based?: boolean, ignore_halfblocks?: boolean }
 ---@return { y: integer, x: integer }[]
-function Matrix:get_positions_of(value, ignore_snake_halfblock)
-  if ignore_snake_halfblock == nil then ignore_snake_halfblock = false end
+function Matrix:get_positions_of(value, opts)
+  opts = opts or {}
+  if opts.return_0_based == nil then opts.return_0_based = false end
+  if opts.ignore_halfblocks == nil then opts.ignore_halfblocks = false end
+
   local positions = {}
   for y = 1, self.height do
     for x = 1, self.width do
@@ -96,13 +109,16 @@ function Matrix:get_positions_of(value, ignore_snake_halfblock)
       -- In snake game with halfblock graphics,
       -- ignore the empty halfblock part of the snake.
       -- -- TODO: not correct
-      if ignore_snake_halfblock then
+      if opts.ignore_halfblocks then
         local y2 = y % 2 == 0 and y - 1 or y + 1
         if self.values[y2][x] == 1 then ignore = true end
       end
       -- Add position if not ignored and value matches.
       if not ignore and self.values[y][x] == value then
-        local x1, y1 = shift_1_to_0based(x, y)
+        local x1, y1 = x, y
+        if opts.return_0_based then
+          x1, y1 = shift_1_to_0based(x, y)
+        end
         table.insert(positions, { y = y1, x = x1 })
       end
     end

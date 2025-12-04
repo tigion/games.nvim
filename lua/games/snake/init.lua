@@ -90,7 +90,7 @@ end
 ---Returns a random free game field position, otherwise nil.
 ---@return { x: integer, y: integer }?
 local function random_free_position()
-  local free_positions = game.matrix:get_positions_of(0, game.gfx_canvas_type == 'halfblock')
+  local free_positions = game.matrix:get_positions_of(0, { ignore_halfblocks = game.gfx_canvas_type == 'halfblock' })
   if #free_positions == 0 then return nil end
   return free_positions[math.random(1, #free_positions)]
 end
@@ -129,7 +129,7 @@ local function place_food()
   local base_pos = gfx.block_base_position(pos.x, pos.y)
   local food_item = food.add(base_pos.x, base_pos.y)
   for _, bp in ipairs(gfx.block_positions(pos.x, pos.y)) do
-    game.matrix:set(bp.y, bp.x, 2)
+    game.matrix:set(bp.y, bp.x, 2, { is_0_based = true })
   end
   local icon = food_item.animation.icons[food_item.animation.idx]
   gfx.draw_text(icon, pos.x, pos.y)
@@ -142,10 +142,10 @@ local function update_snake()
   local head = snake.head()
   local old_tail = snake.old_tail()
   if old_tail ~= nil then
-    game.matrix:set(old_tail.y, old_tail.x, 0)
+    game.matrix:set(old_tail.y, old_tail.x, 0, { is_0_based = true })
     gfx.remove_point(old_tail.x, old_tail.y)
   end
-  game.matrix:set(head.y, head.x, 1)
+  game.matrix:set(head.y, head.x, 1, { is_0_based = true })
   gfx.draw_point(head.x, head.y)
 end
 
@@ -184,18 +184,19 @@ end
 ---@return boolean
 local function has_collision()
   local head = snake.head()
+  local opts = { is_0_based = true }
 
   -- No collision
-  if game.matrix:get(head.y, head.x) == 0 then return false end
+  if game.matrix:get(head.y, head.x, opts) == 0 then return false end
 
   -- Game field border
-  if game.matrix:get(head.y, head.x) == nil then return true end
+  if game.matrix:get(head.y, head.x, opts) == nil then return true end
 
   -- Snake body
-  if game.matrix:get(head.y, head.x) == 1 then return true end
+  if game.matrix:get(head.y, head.x, opts) == 1 then return true end
 
   -- Food
-  if game.matrix:get(head.y, head.x) == 2 then
+  if game.matrix:get(head.y, head.x, opts) == 2 then
     local food_pos = gfx.block_base_position(head.x, head.y)
     local food_item = food.get(food_pos.x, food_pos.y)
     if food_item == nil then return false end
@@ -210,7 +211,7 @@ local function has_collision()
     -- Removes the old food item.
     food.remove(food_pos.x, food_pos.y)
     for _, bp in ipairs(gfx.block_positions(head.x, head.y)) do
-      game.matrix:set(bp.y, bp.x, 0)
+      game.matrix:set(bp.y, bp.x, 0, opts)
     end
     gfx.draw_text(' ', head.x, head.y)
 
