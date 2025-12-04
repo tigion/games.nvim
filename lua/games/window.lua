@@ -75,6 +75,9 @@ function M.open()
     row = row,
     col = col,
     border = border,
+    -- fixbuf = true,
+    -- fixwidth = true,
+    -- fixheight = true,
   }
 
   -- Opens the floating window with the given options.
@@ -91,6 +94,11 @@ function M.open()
     vim.notify('Window size is too small for the game', vim.log.levels.ERROR)
     return false
   end
+
+  -- Sets special window options.
+  vim.api.nvim_set_option_value('winfixbuf', true, { win = M.win })
+  vim.api.nvim_set_option_value('winfixwidth', true, { win = M.win })
+  vim.api.nvim_set_option_value('winfixheight', true, { win = M.win })
 
   return true
 end
