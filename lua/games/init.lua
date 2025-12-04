@@ -4,6 +4,9 @@ local config = require('games.config')
 local M = {}
 
 local function select()
+  -- Prevents opening multiple game windows.
+  if vim.g.tigion_games_is_active == true then return end
+
   local choices = {
     'Snake',
     'Demo: Life',

@@ -42,6 +42,9 @@ end
 ---Opens a floating window.
 ---@return boolean # True if the window was opened successfully, false otherwise.
 function M.open()
+  -- Checks if a game is already active.
+  if vim.g.tigion_games_is_active == true then return false end
+
   -- Creates a new buffer.
   M.buf = vim.api.nvim_create_buf(false, true)
   if M.buf == 0 then
@@ -98,6 +101,18 @@ function M.open()
   vim.api.nvim_set_option_value('winfixwidth', true, { win = M.win })
   vim.api.nvim_set_option_value('winfixheight', true, { win = M.win })
 
+  -- Adds an autocmd to close the window when leaving it.
+  vim.api.nvim_create_autocmd('WinLeave', {
+    buffer = M.buf,
+    callback = function()
+      -- Marks the game as inactive.
+      vim.g.tigion_games_is_active = false
+    end,
+  })
+
+  -- Marks the game as active.
+  vim.g.tigion_games_is_active = true
+
   return true
 end
 
@@ -123,6 +138,9 @@ function M.close()
   if M.buf_is_valid() then vim.api.nvim_buf_delete(M.buf, { force = true }) end
   M.win = nil
   M.buf = nil
+
+  -- Marks the game as inactive.
+  vim.g.tigion_games_is_active = false
 end
 
 ---Sets the window title.
