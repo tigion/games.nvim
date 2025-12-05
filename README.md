@@ -2,6 +2,8 @@
 
 A Neovim plugin for playing little games directly within Neovim.
 
+![image](https://github.com/user-attachments/assets/a65616b9-e79d-4450-b6b2-d9a7c3deb0c8)
+
 > [!WARNING]
 > This plugin is still in early development. Work in progress. 🚀
 
@@ -12,6 +14,7 @@ A Neovim plugin for playing little games directly within Neovim.
 - Demos:
   - **Life** - Game of Life
   - **Snow** - Falling Snowflakes
+
 
 ## Installation
 
