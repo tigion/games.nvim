@@ -11,6 +11,7 @@ local M = {}
 ---@field min? games.ConfigSize
 ---@field max? games.ConfigSize
 ---@field border? string
+---@field ignore_34_aspect_ratio? boolean
 ---
 ---@class games.Config
 ---@field window? games.ConfigWindow
