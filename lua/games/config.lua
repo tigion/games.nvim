@@ -23,8 +23,8 @@ local defaults = {
     height = 0.8,
     min = { width = 30, height = 15 },
     max = { width = 60, height = 30 },
-    border = 'rounded', -- 'none', 'single', 'double', 'rounded', 'solid', 'shadow'
-    ignore_aspect_ratio = false,
+    border = nil, -- defaults to vim.o.winborder or 'none', 'single', 'double', 'rounded', 'solid', 'shadow'
+    ignore_34_aspect_ratio = false,
   },
 }
 
@@ -35,6 +35,7 @@ M.options = vim.deepcopy(defaults, true)
 ---Setups the plugin configuration.
 ---@param opts games.Config The user options.
 function M.setup(opts)
+  opts = opts or {}
   -- Merges the default options with the user options.
   M.options = vim.tbl_deep_extend('force', defaults, opts or {})
 end

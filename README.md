@@ -36,8 +36,8 @@ The default options:
     height = 0.8,
     min = { width = 30, height = 15 },
     max = { width = 60, height = 30 },
-    border = 'rounded',
-    ignore_aspect_ratio = false,
+    border = nil,
+    ignore_34_aspect_ratio = false,
   },
 }
 ```

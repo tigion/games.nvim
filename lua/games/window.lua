@@ -11,32 +11,53 @@ M.win = nil
 ---@type integer|nil
 M.buf = nil
 
----Calculates the window size.
----@return integer, integer # height, width
-local function calc_window_size()
+---Calculates the window size and position.
+---@return integer, integer, integer, integer # height, width, row, col
+local function calc_window_size_and_pos()
+  local lines = vim.o.lines
+  local columns = vim.o.columns
+  local cmd_height = vim.o.cmdheight
+  local border = vim.tbl_get(config.options, 'window', 'border') or vim.o.winborder
+  local border_size = (border ~= 'none' and border ~= '') and 2 or 0
+  local padding_v, padding_h = 1, 2
+
+  local usable_height = lines - cmd_height - border_size - 2 * padding_v
+  local usable_width = columns - border_size - 2 * padding_h
+
   local height = config.options.window.height
   local width = config.options.window.width
 
   ---Uses relative size if between 0 and 1. Otherwise, uses absolute size.
-  if height >= 0 and height <= 1 then height = math.floor(vim.o.lines * height) end
-  if width >= 0 and width <= 1 then width = math.floor(vim.o.columns * width) end
+  if height >= 0 and height <= 1 then height = math.floor(usable_height * height) end
+  if width >= 0 and width <= 1 then width = math.floor(usable_width * width) end
 
   -- Limits the size between min and max.
   local min_height = vim.tbl_get(config.options, 'window', 'min', 'height') or 15
   local min_width = vim.tbl_get(config.options, 'window', 'min', 'width') or 30
   local max_height = vim.tbl_get(config.options, 'window', 'max', 'height') or 30
   local max_width = vim.tbl_get(config.options, 'window', 'max', 'width') or 60
+  if max_height < 1 or max_height > usable_height then max_height = usable_height end
+  if max_width < 1 or max_width > usable_width then max_width = usable_width end
   height = math.floor(math.max(min_height, math.min(max_height, height)))
   width = math.floor(math.max(min_width, math.min(max_width, width)))
 
   -- Uses 3:4 aspect ratio.
-  if not vim.tbl_get(config.options, 'window', 'ignore_aspect_ratio') then
+  if not vim.tbl_get(config.options, 'window', 'ignore_34_aspect_ratio') then
     local aspect_ratio = 3.0 / 4.0
     local block_aspect_ratio = 2.0
-    height = math.floor(width * aspect_ratio / block_aspect_ratio)
+    local win_aspect_ratio = (height * block_aspect_ratio) / width
+    if win_aspect_ratio < aspect_ratio then
+      width = math.floor(height * block_aspect_ratio / aspect_ratio)
+    else
+      height = math.floor(width * aspect_ratio / block_aspect_ratio)
+    end
   end
 
-  return height, width
+  -- Calculates the window position to center it.
+  local row = math.floor((lines - height - cmd_height - border_size) / 2)
+  local col = math.floor((columns - width - border_size) / 2)
+
+  return height, width, row, col
 end
 
 ---Opens a floating window.
@@ -60,15 +81,11 @@ function M.open()
   vim.bo[M.buf].swapfile = false
   vim.bo[M.buf].undofile = false
 
-  -- Calculates the window size.
-  local height, width = calc_window_size()
-
-  -- Calculates the window position to center it.
-  local row = math.floor((vim.o.lines - height) / 2)
-  local col = math.floor((vim.o.columns - width) / 2)
+  -- Calculates the window size and position.
+  local height, width, row, col = calc_window_size_and_pos()
 
   -- Gets the border style.
-  local border = vim.tbl_get(config.options, 'window', 'border') or 'rounded'
+  local border = vim.tbl_get(config.options, 'window', 'border') or vim.o.winborder
 
   -- Sets the window options.
   local opts = {
@@ -90,6 +107,15 @@ function M.open()
 
   -- Checks the minimum size requirements.
   local size = M.size()
+
+  -- local win_border = vim.api.nvim_win_get_config(M.win).border or {}
+  -- local has_border = #win_border > 0
+  -- local cmdheight = vim.go.cmdheight
+  -- if border ~= 'none' then
+  --   width = width - 2
+  --   height = height - 2
+  -- end
+
   if size.width < width or size.height < height then
     M.close()
     vim.notify('Window size is too small for the game', vim.log.levels.ERROR)
