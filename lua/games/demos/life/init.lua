@@ -55,20 +55,19 @@ end
 ---Fills the matrix with some live cells at free random positions.
 ---@param percent? integer Percentage of the live cells (0-100, default: 10)
 local function init_live_cells(percent)
-  gfx.clear()
   percent = math.min(math.max(percent or 10, 0), 100)
-  local count = math.floor((game.field.width * game.field.height) / percent)
+  local count = math.floor((game.field.width * game.field.height) * percent / 100.0)
+  local free_positions = game.matrix:get_positions_of(0)
   stats.population = 0
+  if #free_positions == 0 then return end
   for _ = 1, count do
-    local pos = random_free_position()
+    local idx = math.random(1, #free_positions)
+    local pos = table.remove(free_positions, idx)
     if pos then
       game.matrix:set(pos.y, pos.x, 1)
       stats.population = stats.population + 1
-      gfx.center_text_in_canvas({ 'Initializing... ' .. math.floor(stats.population * 100 / count) .. '%' })
-      gfx.refresh()
     end
   end
-  gfx.clear()
 end
 
 ---Returns the number of live neighbors for a given cell.
