@@ -52,8 +52,6 @@ local function add_keymaps()
   vim.keymap.set('n', 'j', function() M.action('down') end, opts)
   vim.keymap.set('n', 'k', function() M.action('up') end, opts)
   vim.keymap.set('n', 'l', function() M.action('right') end, opts)
-
-  vim.keymap.set('n', 'm', function() M.action('debug_fill') end, opts)
 end
 
 ---Shows the intro screen.
