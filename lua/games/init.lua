@@ -8,6 +8,7 @@ local function select()
   if vim.g.tigion_games_is_active == true then return end
 
   local choices = {
+    'Mines',
     'Snake',
     'Demo: Life',
     'Demo: Snow',
@@ -18,6 +19,8 @@ local function select()
   }, function(name)
     if name == 'Snake' then
       require('games.snake').start()
+    elseif name == 'Mines' then
+      require('games.mines').start()
     elseif name == 'Demo: Life' then
       require('games.demos.life').start()
     elseif name == 'Demo: Snow' then

@@ -80,6 +80,11 @@ function M.canvas.clear() canvas.cache = {} end
 
 local core = {}
 
+function core.get_cursor()
+  local cursor = vim.api.nvim_win_get_cursor(window.win)
+  return { row = cursor[1], col = cursor[2] }
+end
+
 function core.get_char(row, col)
   local line = vim.api.nvim_buf_get_lines(window.buf, row, row + 1, false)[1] or ''
   local start_byte_offset = vim.str_byteindex(line, 'utf-32', col)
@@ -401,6 +406,17 @@ function M.block_base_position(x, y)
     y = y % 2 == 0 and y + 1 or y
   elseif canvas.type == 'doubleblock' then
     x = x % 2 == 0 and x or x - 1
+  end
+  return { x = x, y = y }
+end
+
+function M.cursor_position()
+  local cursor = core.get_cursor()
+  local x, y = cursor.col, cursor.row - 1
+  if canvas.type == 'halfblock' then
+    y = y * canvas.factor.height
+  elseif canvas.type == 'doubleblock' then
+    x = x * canvas.factor.width
   end
   return { x = x, y = y }
 end
