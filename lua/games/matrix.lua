@@ -37,6 +37,10 @@ local function init(height, width)
   return values
 end
 
+local function error_invalid_position(f_name, y, x, height, width)
+  error(string.format('%s: Invalid position (y=%d, x=%d) in %dx%d matrix (1-based).', f_name, y, x, height, width))
+end
+
 ---Creates a new Matrix instance.
 ---@param height integer
 ---@param width integer
@@ -60,6 +64,20 @@ function Matrix:clear()
   end
 end
 
+---Checks if the specified (y, x) position is valid in the matrix.
+---@param y integer
+---@param x integer
+---@param opts? { is_0_based?: boolean }
+---@return boolean
+function Matrix:is_valid(y, x, opts)
+  opts = opts or {}
+  if opts.is_0_based == nil then opts.is_0_based = false end
+  if opts.is_0_based then
+    y, x = shift_0_to_1based(y, x)
+  end
+  return self.values[y] ~= nil and self.values[y][x] ~= nil
+end
+
 ---Sets the value at the specified (y, x) position
 ---if the position is valid.
 ---@param y integer
@@ -72,7 +90,10 @@ function Matrix:set(y, x, value, opts)
   if opts.is_0_based then
     y, x = shift_0_to_1based(y, x)
   end
-  if self.values[y] == nil or self.values[y][x] == nil then return end
+  if self.values[y] == nil or self.values[y][x] == nil then
+    -- error_invalid_position('Matrix:set()', y, x, self.height, self.width)
+    return
+  end
   self.values[y][x] = value
 end
 
@@ -88,7 +109,10 @@ function Matrix:get(y, x, opts)
   if opts.is_0_based then
     y, x = shift_0_to_1based(y, x)
   end
-  if self.values[y] == nil or self.values[y][x] == nil then return nil end
+  if self.values[y] == nil or self.values[y][x] == nil then
+    -- error_invalid_position('Matrix:get()', y, x, self.height, self.width)
+    return nil
+  end
   return self.values[y][x]
 end
 
