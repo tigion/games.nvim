@@ -81,8 +81,9 @@ function M.canvas.clear() canvas.cache = {} end
 local core = {}
 
 function core.get_cursor()
-  local cursor = vim.api.nvim_win_get_cursor(window.win)
-  return { row = cursor[1], col = cursor[2] }
+  -- The character position is needed instead of the byte position.
+  local cursor = vim.fn.getcursorcharpos(window.win)
+  return { row = cursor[2], col = cursor[3] }
 end
 
 function core.get_char(row, col)
@@ -412,7 +413,7 @@ end
 
 function M.cursor_position()
   local cursor = core.get_cursor()
-  local x, y = cursor.col, cursor.row - 1
+  local x, y = cursor.col - 1, cursor.row - 1 -- Shifts from 1-based to 0-based.
   if canvas.type == 'halfblock' then
     y = y * canvas.factor.height
   elseif canvas.type == 'doubleblock' then
