@@ -22,18 +22,19 @@ local M = {}
 ---The game state.
 local game = {
   gfx_canvas_type = 'singleblock',
+  use_small_numbers = true,
   field = { width = -1, height = -1 },
   matrix = nil,
   is_running = false,
   waiting_runs = 0,
 }
 
--- FIX: check multibyte characters in gfx.draw_text()
 local icons = {
-  field = '.', -- '░'
+  field = '░',
+  mine = '♦',
+  flag = '•',
   empty = ' ',
-  mine = '*',
-  flag = 'x',
+  numbers = { '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈' },
 }
 
 local stats = {
@@ -79,7 +80,6 @@ local function set_mine(y, x, mine)
   local value = game.matrix:get(y, x)
   local new_value = value + (mine and 1 or -1)
   game.matrix:set(y, x, new_value)
-  stats.mine_count = stats.mine_count + 1
 end
 
 local function set_flagged(y, x, flagged)
@@ -156,13 +156,18 @@ local function place_mines(percent)
   for _ = 1, count do
     local idx = math.random(1, #free_positions)
     local pos = table.remove(free_positions, idx)
-    if pos then set_mine(pos.y, pos.x, true) end
+    if pos then
+      set_mine(pos.y, pos.x, true)
+      stats.mine_count = stats.mine_count + 1
+    end
   end
 end
 
 ---Prepares the game.
 local function prepare()
   stats.start_time = os.time()
+  stats.end_time = 0
+  stats.flag_count = 0
   game.matrix:clear()
 
   reset_field()
@@ -192,7 +197,6 @@ local function run()
 end
 
 ---Toggles a flag at the current cursor position.
----
 local function toggle_flag()
   local pos = gfx.cursor_position()
   local x, y = pos.x + 1, pos.y + 1
@@ -228,7 +232,8 @@ local function check_neighbors(y, x)
       set_checked(ny, nx, true)
       if not is_mine(ny, nx) then
         local count = count_neighbor_mines(ny, nx)
-        local icon = (count == 0) and icons.empty or tostring(count)
+        local icon = icons.empty
+        if count > 0 then icon = game.use_small_numbers and icons.numbers[count] or tostring(count) end
         gfx.draw_text(icon, nx - 1, ny - 1)
 
         if count == 0 then
@@ -260,9 +265,10 @@ local function detect_mine()
   local pos = gfx.cursor_position()
   local x, y = pos.x + 1, pos.y + 1
 
+  -- Ignores checked cells.
   if is_checked(y, x) then return end
 
-  -- remove flag
+  -- Removes flag if present.
   if is_flagged(y, x) then toggle_flag() end
 
   -- Checks if a mine is triggered.
@@ -277,7 +283,8 @@ local function detect_mine()
 
   -- Display number of adjacent mines or empty space.
   local count = count_neighbor_mines(y, x)
-  local icon = (count == 0) and icons.empty or tostring(count)
+  local icon = icons.empty
+  if count > 0 then icon = game.use_small_numbers and icons.numbers[count] or tostring(count) end
   gfx.draw_text(icon, pos.x, pos.y)
   set_checked(y, x, true)
 
@@ -305,6 +312,11 @@ end
 ---Restarts the gameplay.
 function M.restart()
   game.is_running = false
+
+  while game.waiting_runs > 0 do
+    vim.wait(100)
+  end
+
   gfx.clear()
   show_intro()
   window.set_title(' Mines ')
