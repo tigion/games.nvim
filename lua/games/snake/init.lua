@@ -294,7 +294,7 @@ end
 
 ---The main game loop.
 local function run()
-  if not game.is_running then return end
+  if not game.is_running or not vim.g.tigion_games_is_active then return end
 
   handle_snake()
   handle_food()

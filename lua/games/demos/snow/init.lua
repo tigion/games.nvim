@@ -140,7 +140,7 @@ local function handle_snow()
 end
 
 local function run()
-  if not game.is_running then return end
+  if not game.is_running or not vim.g.tigion_games_is_active then return end
 
   update_max_snowflakes()
   add_snowflake()
