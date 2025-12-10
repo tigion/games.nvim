@@ -10,6 +10,7 @@ A Neovim plugin for playing little games directly within Neovim.
 ## Features
 
 - Games:
+  - **Mines** - Find the Mines
   - **Snake** - The Hungry Snake
 - Demos:
   - **Life** - Game of Life
