@@ -6,7 +6,7 @@ local matrix = require('games.matrix')
 local M = {}
 
 local game = {
-  gfx_canvas_type = 'halfblock',
+  gfx_canvas_type = 'quarterblock',
   field = { width = -1, height = -1 },
   matrix = nil,
   fps = 10,

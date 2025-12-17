@@ -28,6 +28,9 @@ local types = {
   halfblock = {
     factor = { width = 1.0, height = 2.0 },
   },
+  quarterblock = {
+    factor = { width = 2.0, height = 2.0 },
+  },
   doubleblock = {
     factor = { width = 0.5, height = 1.0 },
   },
@@ -154,6 +157,27 @@ function helper.is_out_of_bounds(x, y) return x < 0 or x > canvas.size.width - 1
 
 function helper.is_empty(text) return text == nil or text == '' end
 
+function helper.find_table_index(table, value)
+  for i, v in ipairs(table) do
+    if v == value then return i end
+  end
+  return nil
+end
+
+function helper.bitwise_or(number, mask, bits)
+  local max = 2 ^ bits - 1
+  local new = number + mask
+  if mask < 0 or new > max then return number end
+  return new
+end
+
+function helper.bitwise_xor(number, mask, bits)
+  local max = 2 ^ bits - 1
+  local new = math.abs(number - mask)
+  if mask < 0 or new > max then return number end
+  return new
+end
+
 -- ----------------------------------------------------------------------------
 
 local singleblock = {}
@@ -262,6 +286,72 @@ function halfblock.remove_point(x, y) halfblock.set_point(x, y, false) end
 
 -- ----------------------------------------------------------------------------
 
+local quarterblock = {}
+
+quarterblock.icons =
+  { ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█' }
+
+--  0 - 0000: ' '
+--  1 - 0001: '▘' <-- upper left
+--  2 - 0010: '▝' <-- upper right
+--  3 - 0011: '▀'
+--  4 - 0100: '▖' <-- bottom left
+--  5 - 0101: '▌'
+--  6 - 0110: '▞'
+--  7 - 0111: '▛'
+--  8 - 1000: '▗' <-- bottom right
+--  9 - 1001: '▚'
+-- 10 - 1010: '▐'
+-- 11 - 1011: '▜'
+-- 12 - 1100: '▄'
+-- 13 - 1101: '▙'
+-- 14 - 1110: '▟'
+-- 15 - 1111: '█'
+
+function quarterblock.set_point(x, y, active)
+  active = active == nil and true or active == true
+
+  if helper.is_out_of_bounds(x, y) then return end
+  local row = math.floor(y / canvas.factor.height)
+  local col = math.floor(x / canvas.factor.width)
+
+  local existing_char = core.get_char(row, col)
+  if existing_char == nil then return end
+
+  local icon_idx = helper.find_table_index(quarterblock.icons, existing_char)
+  if icon_idx == nil then return end
+
+  local is_upper_left = (x % canvas.factor.width) == 0 and (y % canvas.factor.height) == 0
+  local is_upper_right = (x % canvas.factor.width) ~= 0 and (y % canvas.factor.height) == 0
+  local is_lower_left = (x % canvas.factor.width) == 0 and (y % canvas.factor.height) ~= 0
+  local is_lower_right = (x % canvas.factor.width) ~= 0 and (y % canvas.factor.height) ~= 0
+
+  local bitmask = 0
+  if is_upper_left then bitmask = 1 end
+  if is_upper_right then bitmask = 2 end
+  if is_lower_left then bitmask = 4 end
+  if is_lower_right then bitmask = 8 end
+
+  icon_idx = icon_idx - 1 -- Shift to 0-based index.
+
+  local new_idx = nil
+  if active == true then
+    new_idx = bit.bor(icon_idx, bitmask)
+  else
+    new_idx = bit.band(icon_idx, bit.bnot(bitmask))
+  end
+  if new_idx == nil or new_idx < 0 or new_idx > #quarterblock.icons - 1 then return end
+  local char = quarterblock.icons[new_idx + 1] -- Shift back to 1-based index.
+
+  core.set_char(row, col, char)
+end
+
+function quarterblock.add_point(x, y) quarterblock.set_point(x, y, true) end
+
+function quarterblock.remove_point(x, y) quarterblock.set_point(x, y, false) end
+
+-- ----------------------------------------------------------------------------
+
 function M.init(type)
   type = type or 'singleblock'
 
@@ -297,6 +387,8 @@ function M.draw_point(x, y)
     singleblock.add_point(x, y)
   elseif canvas.type == 'halfblock' then
     halfblock.add_point(x, y)
+  elseif canvas.type == 'quarterblock' then
+    quarterblock.add_point(x, y)
   elseif canvas.type == 'doubleblock' then
     doubleblock.add_point(x, y)
   end
@@ -308,6 +400,8 @@ function M.remove_point(x, y)
     singleblock.remove_point(x, y)
   elseif canvas.type == 'halfblock' then
     halfblock.remove_point(x, y)
+  elseif canvas.type == 'quarterblock' then
+    quarterblock.remove_point(x, y)
   elseif canvas.type == 'doubleblock' then
     doubleblock.remove_point(x, y)
   end
@@ -328,6 +422,9 @@ function M.draw_text(text, x, y, align)
   local row, col = y, x
   if canvas.type == 'halfblock' then
     row = math.floor(y / canvas.factor.height)
+  elseif canvas.type == 'quarterblock' then
+    row = math.floor(y / canvas.factor.height)
+    col = math.floor(x / canvas.factor.width)
   elseif canvas.type == 'doubleblock' then
     col = math.floor(x / canvas.factor.width)
   end
@@ -360,6 +457,8 @@ end
 ---@param check_full_block? boolean Whether to check for full block match in halfblock mode.
 ---@return boolean
 function M.is_same_pos(x1, y1, x2, y2, check_full_block)
+  -- TODO: add quarterblock and doubleblock? support
+
   -- Allows checking for full block match in halfblock mode.
   if check_full_block == true and canvas.type == 'halfblock' then
     check_full_block = true
@@ -388,6 +487,9 @@ function M.block_positions(x, y)
   if canvas.type == 'halfblock' then
     local y2 = y % 2 == 0 and y + 1 or y - 1
     return { { x = x, y = y }, { x = x, y = y2 } }
+  elseif canvas.type == 'quarterblock' then
+    -- TODO: Add support for quarterblock mode.
+    return {}
   elseif canvas.type == 'doubleblock' then
     local x2 = x % 2 == 0 and x + 1 or x - 1
     return { { x = x, y = y }, { x = x2, y = y } }
@@ -398,12 +500,16 @@ end
 
 ---Returns the base block position for the given (x, y) coordinate.
 ---In halfblock mode, returns the position of the lower half.
+---In quarterblock mode, returns the position of the lower-left quarter.
 ---In doubleblock mode, returns the position of the left block.
 ---@param x integer The x-coordinate.
 ---@param y integer The y-coordinate.
 ---@return { x: integer, y: integer }
 function M.block_base_position(x, y)
   if canvas.type == 'halfblock' then
+    y = y % 2 == 0 and y + 1 or y
+  elseif canvas.type == 'quarterblock' then
+    x = x % 2 == 0 and x or x - 1
     y = y % 2 == 0 and y + 1 or y
   elseif canvas.type == 'doubleblock' then
     x = x % 2 == 0 and x or x - 1
@@ -415,6 +521,9 @@ function M.cursor_position()
   local cursor = core.get_cursor()
   local x, y = cursor.col - 1, cursor.row - 1 -- Shifts from 1-based to 0-based.
   if canvas.type == 'halfblock' then
+    y = y * canvas.factor.height
+  elseif canvas.type == 'quarterblock' then
+    x = x * canvas.factor.width
     y = y * canvas.factor.height
   elseif canvas.type == 'doubleblock' then
     x = x * canvas.factor.width
