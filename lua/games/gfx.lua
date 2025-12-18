@@ -174,6 +174,10 @@ function helper.find_table_index(table, value)
   return nil
 end
 
+function helper.y_to_row(y) return math.floor(y / canvas.factor.height) end
+
+function helper.x_to_col(x) return math.floor(x / canvas.factor.width) end
+
 -- ----------------------------------------------------------------------------
 
 local singleblock = {}
@@ -188,8 +192,8 @@ function singleblock.set_point(x, y, active)
 
   if helper.is_out_of_bounds(x, y) then return end
   local row, col = y, x
-  -- local row = math.floor(y / canvas.factor.height)
-  -- local col = math.floor(x / canvas.factor.width)
+  -- local row = helper.y_to_row(y)
+  -- local col = helper.x_to_col(x)
 
   local existing_char = core.get_char(row, col)
   if existing_char == nil then return end
@@ -223,7 +227,7 @@ function halfblock.set_point(x, y, active)
   active = active == nil and true or active == true
 
   if helper.is_out_of_bounds(x, y) then return end
-  local row = math.floor(y / canvas.factor.height)
+  local row = helper.y_to_row(y)
   local col = x
 
   local existing_char = core.get_char(row, col)
@@ -285,8 +289,8 @@ function quarterblock.set_point(x, y, active)
   active = active == nil and true or active == true
 
   if helper.is_out_of_bounds(x, y) then return end
-  local row = math.floor(y / canvas.factor.height)
-  local col = math.floor(x / canvas.factor.width)
+  local row = helper.y_to_row(y)
+  local col = helper.x_to_col(x)
 
   local existing_char = core.get_char(row, col)
   if existing_char == nil then return end
@@ -338,7 +342,7 @@ function doubleblock.set_point(x, y, active)
 
   if helper.is_out_of_bounds(x, y) then return end
   local row = y
-  local col = math.floor(x / canvas.factor.width)
+  local col = helper.x_to_col(x)
 
   local existing_char = core.get_double_char(row, col)
   if existing_char == nil then return end
@@ -428,12 +432,12 @@ function M.draw_text(text, x, y, align)
 
   local row, col = y, x
   if canvas.type == 'halfblock' then
-    row = math.floor(y / canvas.factor.height)
+    row = helper.y_to_row(y)
   elseif canvas.type == 'quarterblock' then
-    row = math.floor(y / canvas.factor.height)
-    col = math.floor(x / canvas.factor.width)
+    row = helper.y_to_row(y)
+    col = helper.x_to_col(x)
   elseif canvas.type == 'doubleblock' then
-    col = math.floor(x / canvas.factor.width)
+    col = helper.x_to_col(x)
   end
 
   core.set_text(row, col, text)
