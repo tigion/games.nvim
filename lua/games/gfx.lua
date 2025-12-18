@@ -24,15 +24,34 @@ local M = {}
 local types = {
   singleblock = {
     factor = { width = 1.0, height = 1.0 },
+    icons = { ' ', '█' }, -- 0-1
+    -- gradient = {'░', '▒', '▓'},
   },
   halfblock = {
     factor = { width = 1.0, height = 2.0 },
+    -- icon = {
+    --   empty = ' ',
+    --   upper_half = '▀',
+    --   lower_half = '▄',
+    --   full = '█',
+    -- },
+    icons = { ' ', '▀', '▄', '█' }, -- 0-3
   },
   quarterblock = {
     factor = { width = 2.0, height = 2.0 },
+    -- stylua: ignore start
+    icons = {
+      ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', -- 0-7
+      '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█', -- 8-15
+    },
+    -- stylua: ignore end
   },
   doubleblock = {
     factor = { width = 0.5, height = 1.0 },
+    icon = {
+      empty = '  ',
+      full = '██',
+    },
   },
 }
 
@@ -164,42 +183,31 @@ function helper.find_table_index(table, value)
   return nil
 end
 
-function helper.bitwise_or(number, mask, bits)
-  local max = 2 ^ bits - 1
-  local new = number + mask
-  if mask < 0 or new > max then return number end
-  return new
-end
-
-function helper.bitwise_xor(number, mask, bits)
-  local max = 2 ^ bits - 1
-  local new = math.abs(number - mask)
-  if mask < 0 or new > max then return number end
-  return new
-end
-
 -- ----------------------------------------------------------------------------
 
 local singleblock = {}
 
-singleblock.icon = {
-  empty = ' ',
-  full = '█',
-  -- gradient = {'░', '▒', '▓'},
-}
+singleblock.icons = types.singleblock.icons
 
 function singleblock.set_point(x, y, active)
   active = active == nil and true or active == true
+
   if helper.is_out_of_bounds(x, y) then return end
   local row, col = y, x
+  -- local row = math.floor(y / canvas.factor.height)
+  -- local col = math.floor(x / canvas.factor.width)
+
   local existing_char = core.get_char(row, col)
-  if active == true then
-    if existing_char == nil or existing_char == singleblock.icon.full then return end
-    core.set_char(row, col, singleblock.icon.full)
-  else
-    if existing_char == nil or existing_char == singleblock.icon.empty then return end
-    core.set_char(row, col, singleblock.icon.empty)
-  end
+  if existing_char == nil then return end
+
+  local icon_idx = helper.find_table_index(singleblock.icons, existing_char)
+  if icon_idx == nil then return end
+
+  local new_idx = active and 2 or 1
+  if new_idx == icon_idx or new_idx == nil or new_idx < 1 or new_idx > #singleblock.icons then return end
+
+  local char = singleblock.icons[new_idx]
+  core.set_char(row, col, char)
 end
 
 function singleblock.add_point(x, y) singleblock.set_point(x, y, true) end
@@ -208,41 +216,14 @@ function singleblock.remove_point(x, y) singleblock.set_point(x, y, false) end
 
 -- ----------------------------------------------------------------------------
 
-local doubleblock = {}
-
-doubleblock.icon = {
-  empty = '  ',
-  full = '██',
-}
-
-function doubleblock.set_point(x, y, active)
-  active = active == nil and true or active == true
-  if helper.is_out_of_bounds(x, y) then return end
-  local row, col = y, math.floor(x / canvas.factor.width)
-  local existing_char = core.get_char(row, col)
-  if active == true then
-    if existing_char == nil or existing_char == doubleblock.icon.full then return end
-    core.set_double_char(row, col, doubleblock.icon.full)
-  else
-    if existing_char == nil or existing_char == doubleblock.icon.empty then return end
-    core.set_double_char(row, col, doubleblock.icon.empty)
-  end
-end
-
-function doubleblock.add_point(x, y) doubleblock.set_point(x, y, true) end
-
-function doubleblock.remove_point(x, y) doubleblock.set_point(x, y, false) end
-
--- ----------------------------------------------------------------------------
-
 local halfblock = {}
 
-halfblock.icon = {
-  empty = ' ',
-  upper_half = '▀',
-  lower_half = '▄',
-  full = '█',
-}
+halfblock.icons = types.halfblock.icons
+
+-- 0 - 00: ' '
+-- 1 - 01: '▀' <-- upper half
+-- 2 - 10: '▄' <-- lower half
+-- 3 - 11: '█'
 
 function halfblock.set_point(x, y, active)
   active = active == nil and true or active == true
@@ -251,31 +232,30 @@ function halfblock.set_point(x, y, active)
   local row = math.floor(y / canvas.factor.height)
   local col = x
 
-  local is_upper_half = (y % canvas.factor.height) == 0
-  local is_lower_half = not is_upper_half
-
   local existing_char = core.get_char(row, col)
   if existing_char == nil then return end
 
-  local char = nil
+  local icon_idx = helper.find_table_index(halfblock.icons, existing_char)
+  if icon_idx == nil then return end
+
+  local is_upper_half = (y % canvas.factor.height) == 0
+  local is_lower_half = not is_upper_half
+
+  local bitmask = 0
+  if is_upper_half then bitmask = 1 end
+  if is_lower_half then bitmask = 2 end
+  if bitmask == 0 then return end
+
+  local new_idx = nil
+  icon_idx = icon_idx - 1 -- Shift to 0-based index.
   if active == true then
-    if existing_char == halfblock.icon.empty then
-      char = is_upper_half and halfblock.icon.upper_half or halfblock.icon.lower_half
-    elseif existing_char == halfblock.icon.upper_half and is_lower_half then
-      char = halfblock.icon.full
-    elseif existing_char == halfblock.icon.lower_half and is_upper_half then
-      char = halfblock.icon.full
-    end
+    new_idx = bit.bor(icon_idx, bitmask)
   else
-    if existing_char == halfblock.icon.full then
-      char = is_upper_half and halfblock.icon.lower_half or halfblock.icon.upper_half
-    elseif existing_char == halfblock.icon.upper_half and is_upper_half then
-      char = halfblock.icon.empty
-    elseif existing_char == halfblock.icon.lower_half and is_lower_half then
-      char = halfblock.icon.empty
-    end
+    new_idx = bit.band(icon_idx, bit.bnot(bitmask))
   end
-  if char == nil then return end
+  if new_idx == icon_idx or new_idx == nil or new_idx < 0 or new_idx > #halfblock.icons - 1 then return end
+  new_idx = new_idx + 1 -- Shift to 1-based index.
+  local char = halfblock.icons[new_idx]
 
   core.set_char(row, col, char)
 end
@@ -288,8 +268,7 @@ function halfblock.remove_point(x, y) halfblock.set_point(x, y, false) end
 
 local quarterblock = {}
 
-quarterblock.icons =
-  { ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█' }
+quarterblock.icons = types.quarterblock.icons
 
 --  0 - 0000: ' '
 --  1 - 0001: '▘' <-- upper left
@@ -331,17 +310,18 @@ function quarterblock.set_point(x, y, active)
   if is_upper_right then bitmask = 2 end
   if is_lower_left then bitmask = 4 end
   if is_lower_right then bitmask = 8 end
-
-  icon_idx = icon_idx - 1 -- Shift to 0-based index.
+  if bitmask == 0 then return end
 
   local new_idx = nil
+  icon_idx = icon_idx - 1 -- Shift to 0-based index.
   if active == true then
     new_idx = bit.bor(icon_idx, bitmask)
   else
     new_idx = bit.band(icon_idx, bit.bnot(bitmask))
   end
-  if new_idx == nil or new_idx < 0 or new_idx > #quarterblock.icons - 1 then return end
-  local char = quarterblock.icons[new_idx + 1] -- Shift back to 1-based index.
+  if new_idx == icon_idx or new_idx == nil or new_idx < 0 or new_idx > #quarterblock.icons - 1 then return end
+  new_idx = new_idx + 1 -- Shift to 1-based index.
+  local char = quarterblock.icons[new_idx]
 
   core.set_char(row, col, char)
 end
@@ -349,6 +329,30 @@ end
 function quarterblock.add_point(x, y) quarterblock.set_point(x, y, true) end
 
 function quarterblock.remove_point(x, y) quarterblock.set_point(x, y, false) end
+
+-- ----------------------------------------------------------------------------
+
+local doubleblock = {}
+
+doubleblock.icon = types.doubleblock.icon
+
+function doubleblock.set_point(x, y, active)
+  active = active == nil and true or active == true
+  if helper.is_out_of_bounds(x, y) then return end
+  local row, col = y, math.floor(x / canvas.factor.width)
+  local existing_char = core.get_char(row, col)
+  if active == true then
+    if existing_char == nil or existing_char == doubleblock.icon.full then return end
+    core.set_double_char(row, col, doubleblock.icon.full)
+  else
+    if existing_char == nil or existing_char == doubleblock.icon.empty then return end
+    core.set_double_char(row, col, doubleblock.icon.empty)
+  end
+end
+
+function doubleblock.add_point(x, y) doubleblock.set_point(x, y, true) end
+
+function doubleblock.remove_point(x, y) doubleblock.set_point(x, y, false) end
 
 -- ----------------------------------------------------------------------------
 
