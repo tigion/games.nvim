@@ -464,10 +464,10 @@ end
 ---@param check_full_block? boolean Whether to check for full block match in halfblock mode.
 ---@return boolean
 function M.is_same_pos(x1, y1, x2, y2, check_full_block)
-  -- TODO: add quarterblock and doubleblock? support
+  -- TODO: Refactor to be cleaner.
 
   -- Allows checking for full block match in halfblock mode.
-  if check_full_block == true and canvas.type == 'halfblock' then
+  if check_full_block == true and (canvas.type == 'halfblock' or canvas.type == 'quarterblock') then
     check_full_block = true
   else
     check_full_block = false
@@ -475,9 +475,15 @@ function M.is_same_pos(x1, y1, x2, y2, check_full_block)
 
   -- When checking for full block, compare both halves.
   if check_full_block then
-    local x2b = x2
-    local y2b = y2 % 2 == 0 and y2 + 1 or y2 - 1
-    return x1 == x2 and y1 == y2 or x1 == x2b and y1 == y2b
+    if canvas.type == 'halfblock' then
+      local x2b = x2
+      local y2b = y2 % 2 == 0 and y2 + 1 or y2 - 1
+      return x1 == x2 and y1 == y2 or x1 == x2b and y1 == y2b
+    elseif canvas.type == 'quarterblock' then
+      local x2b = x2 % 2 == 0 and x2 + 1 or x2 - 1
+      local y2b = y2 % 2 == 0 and y2 + 1 or y2 - 1
+      return x1 == x2 and y1 == y2 or x1 == x2b and y1 == y2 or x1 == x2 and y1 == y2b or x1 == x2b and y1 == y2b
+    end
   end
 
   -- Normal comparison.
@@ -491,12 +497,15 @@ end
 ---@param y integer The y-coordinate.
 ---@return { x: integer, y: integer }[]
 function M.block_positions(x, y)
+  -- TODO: Refactor to be cleaner.
+
   if canvas.type == 'halfblock' then
     local y2 = y % 2 == 0 and y + 1 or y - 1
     return { { x = x, y = y }, { x = x, y = y2 } }
   elseif canvas.type == 'quarterblock' then
-    -- TODO: Add support for quarterblock mode.
-    return {}
+    local y2 = y % 2 == 0 and y + 1 or y - 1
+    local x2 = x % 2 == 0 and x + 1 or x - 1
+    return { { x = x, y = y }, { x = x2, y = y }, { x = x, y = y2 }, { x = x2, y = y2 } }
   elseif canvas.type == 'doubleblock' then
     local x2 = x % 2 == 0 and x + 1 or x - 1
     return { { x = x, y = y }, { x = x2, y = y } }
