@@ -22,10 +22,16 @@ Use your favorite package manager to install `tigion/games.nvim`.
 
 ## Usage
 
-Call the following command to select a game or a demo:
+Call the following to select a game or a demo:
 
 ```lua
 require('games').select()
+```
+
+Or use the command:
+
+```vim
+:lua require('games').select()
 ```
 
 ## Configuration
